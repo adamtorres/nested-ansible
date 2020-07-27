@@ -1,0 +1,105 @@
+---
+- hosts: all
+
+  vars_files:
+    - vars.yml
+
+  pre_tasks:
+    - name: Ensure apt proxy is correct
+      template:
+        src: apt.conf.j2
+        dest: /etc/apt/apt.conf
+        owner: root
+        group: root
+        mode: 0644
+      become: true
+
+    - name: Update apt cache if needed.
+      apt: update_cache=true cache_valid_time=3600
+      become: true
+
+  tasks:
+    # TODO: Split this into roles
+    - name: Ensure apt packages are installed
+      apt:
+        name:
+          - git
+          - tree
+          - vim
+          - qemu
+          - qemu-kvm
+          - libvirt-clients
+          - libvirt-daemon-system
+          - ebtables
+          - libxslt-dev
+          - libxml2-dev
+          - libvirt-dev
+          - zlib1g-dev
+          - ruby-dev
+          - vagrant
+          - python-pip
+          - python3-pip
+          - python3-venv
+          - qemu-guest-agent
+        state: present
+      become: true
+
+    - name: Check for python alternative link
+      stat:
+        path: "/etc/alternatives/python"
+      register: pylink
+
+    - name: Update python version priority
+      alternatives:
+        name: python
+        path: "/usr/bin/{{ item.bin }}"
+        link: /usr/bin/python
+        priority: "{{ item.priority }}"
+      become: true
+      with_items:
+        - { bin: "python2.7", priority: 1 }
+        - { bin: "python3.7", priority: 2 }
+      when: (not pylink.stat.exists) or (pylink.stat.islnk and pylink.stat.lnk_source != "/usr/bin/python3.7")
+
+    - name: Ensure directory for pip config exists.
+      file:
+        path: "{{ ansible_user_dir }}/.config/pip"
+        state: directory
+        mode: '0755'
+
+    - name: Add pip config
+      template:
+        src: "templates/pip.conf.j2"
+        dest: "{{ ansible_user_dir }}/.config/pip/pip.conf"
+        owner: "{{ ansible_user_id }}"
+        group: "{{ ansible_user_id }}"
+        mode: 0644
+
+    - name: Ensure directory for the test VM exists.
+      file:
+        path: "{{ ansible_user_dir }}/test"
+        state: directory
+        mode: '0755'
+
+    - name: Ensure python venv has required packages
+      pip:
+        name:
+          - "ansible"
+          - "pip"
+        state: "latest"
+        virtualenv_command: python3.7 -m venv
+        virtualenv: "{{ ansible_user_dir }}/test/venv"
+
+    - name: Ensure git settings are up-to-date
+      git_config:
+        name: "{{ item.setting }}"
+        value: "{{ item.value }}"
+        scope: global
+      with_items:
+        - { setting: "user.email", value: "{{ git_user }}" }
+        - { setting: "user.name", value: "{{ git_name }}" }
+
+    - name: Ensure Disaster project is cloned/updated.
+      git:
+        repo: "https://github.com/aescanero/disasterproject.git"
+        dest: "{{ ansible_user_dir }}/test/disasterproject"
