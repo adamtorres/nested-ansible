@@ -1,6 +1,6 @@
 # Nested Ansible
 
-The goal is to create a VM in vagrant which itself hosts one or more VMs to test ansible processes.  There was a reason for this but it escapes me at the moment.
+The goal is to create a VM in vagrant which itself hosts one or more VMs to test ansible processes.  There was a reason for this but it escapes me at the moment.  Eventually, what I'd like to see would be a minimal set of commands to get python and ansible installed and then an ansible command to get the rest of the local host set up to create a VM which then gets set up to run its own VMs.  Might try for a bit of recursion where there's a playbook that will create a VM with a certain percentage of the host's RAM which then gets configured to do the same.
 
 ## Set up the local environment to run vagrant/libvirt
 
