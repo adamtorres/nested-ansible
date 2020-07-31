@@ -1,0 +1,1 @@
+* Verify initial ssh connection asking about fingerprints.

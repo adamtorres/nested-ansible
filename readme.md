@@ -26,40 +26,14 @@ Point pip to a local pypi cache so constant rebuilds will not eat up monthly dat
 
 ## Create a simple VM
 
-This VM is "just" a simple Debian box.  The comments should, hopefully, explain what each line is for.
+The included Vagrantfile describes a simple Debian box.  The comments should, hopefully, explain what each line is for.  In short:
 
-    cat << EOF > Vagrantfile
-    # -*- mode: ruby -*-
-    # vi: set ft=ruby :
-
-    Vagrant.configure("2") do |config|
-      # buster == Debian 10.  Latest at the time of Vagrantfile creation.
-      config.vm.box = "debian/buster64"
-      # Don't want vagrant constantly downloading box updates just for these throw-away tests.
-      config.vm.box_check_update = false
-      # Do not set up a shared folder between the hose and guest.
-      config.vm.synced_folder '.', '/vagrant', disabled: true
-      config.nfs.verify_installed = false
-      # Do not generate a new ssh key.  Uses an insecure key.
-      config.ssh.insert_key = false
-      # Tells the guest to use an apt proxy - https://hub.docker.com/r/sameersbn/apt-cacher-ng
-      config.vm.provider :libvirt do |lv|
-        # Adding a lot of RAM as this VM will host other VMs.
-        lv.cpus = 4
-        lv.memory = 10240
-        # Am told these are required to nest VMs.
-        lv.nested = true
-        lv.cpu_mode = "host-model"
-        # Create a virtio channel for use by the qemu-guest agent (time sync, snapshotting, etc)
-        lv.channel :type => 'unix', :target_name => 'org.qemu.guest_agent.0', :target_type => 'virtio'
-      end
-
-      config.vm.define "blarg" do |vm|
-        vm.vm.hostname = "blarg.test"
-        vm.vm.network "private_network", ip: "192.168.33.10"
-      end
-    end
-    EOF
+* uses Debian Buster 64bit
+* will not update the downloaded box in order to save on internet usage
+* does not set up a shared folder between host and guest
+* uses a pile of RAM and CPU as this VM will host other VMs
+* sets up a connection to the host so qemu-guest-agent will function
+* names the host "blarg.test" with ip 192.168.33.10
 
 Now, start the VM.  If you don't already have the debian/buster64 box downloaded for libvirt, this might take a moment.
 
@@ -81,28 +55,13 @@ Regardless, The first upgrades pip and installs wheel.  An upgraded pip is usual
     pip install -r requirements-first.txt --upgrade
     pip install -r requirements-second.txt --upgrade
 
-## Create a basic inventory.
+## Verify the inventory.
 
-    cat << EOF > inventory.yml
-    [machines]
-    vm1 ansible_host=192.168.33.10 ansible_user=vagrant ansible_ssh_private_key_file=/home/$USER/.vagrant.d/insecure_private_key
-    EOF
+The included inventory file points to the VM created by the Vagrantfile and tells ansible the user and private key to use.  If you've changed any of that, the inventory file needs to reflect those changes.
 
 ## Configure some ansible settings
 
-The `ansible.cfg` file holds some settings for ansible's behavior.  I've no idea how important this is, but I just don't like the warnings about which python interpreter is used.  The `auto_silent` setting tells ansible to just be quiet about it.  While not secure, turning `host_key_checking` off just makes dealing with often recreated VMs easier.  This suppresses the ssh question of `ECDSA key fingerprint is...` when first connecting.  Another way around it would be to manually connect to each VM and answer the question outside of ansible.  Maybe.  I seem to recall it asking after I did so but am not certain if the VM was recreated or if I used a different VM ip.
-The `profile_tasks` callback is just a nice report for each task and at the end to show how long everything took.  The default sorting is descending but is overridden here to be in executed order.
-
-    cat << EOF > ansible.cfg
-    [defaults]
-    interpreter_python=auto_silent
-    host_key_checking = False
-    callback_whitelist = profile_tasks
-
-    [callback_profile_tasks]
-    # sort_order = none, ascending, descending
-    sort_order = none
-    EOF
+The `ansible.cfg` file holds some settings for ansible's behavior.  The `interpreter_python` setting silences the warnings about automatically determining which python interpreter to use.  The `auto_silent` setting tells ansible to just be quiet about it.  While not secure, turning `host_key_checking` off just makes dealing with often recreated VMs easier.  This suppresses the ssh question of `ECDSA key fingerprint is...` when first connecting.  Another way around it would be to manually connect to each VM and answer the question outside of ansible.  The `profile_tasks` callback just adds a nice report for each task and at the end to show how long everything took.  The default sorting is descending but is overridden here to be in executed order.
 
 ## Simple test to make sure ansible can see the VM.
 
