@@ -73,6 +73,14 @@ This runs an adhoc command on the VM.  The `-a` arg is for adding arguments to t
     Mem:          9.8Gi       155Mi       9.4Gi       8.0Mi       166Mi       9.4Gi
     Swap:            0B          0B          0B
 
+If you get the error below, just wait a few seconds and try again.  I haven't looked into why this happens.
+
+    vm1 | UNREACHABLE! => {
+        "changed": false,
+        "msg": "Failed to connect to the host via ssh: ssh: connect to host 192.168.33.10 port 22: Connection timed out",
+        "unreachable": true
+    }
+
 Just for fun, run the same command against the localhost.  Note the comma after `localhost` and the change from `machines` to `all`.  The comma tells ansible to treat the string as a list as it tries various ways to interpret the given inventory.  Since the inventory is just a list of hosts, there isn't a `machines` group so it was changed to the default `all` group.  Also, `-m command` is added here to show the behavior is the same as without it.
 
     ansible -i localhost, -m command -a "free -h" all
