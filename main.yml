@@ -13,6 +13,7 @@
         group: root
         mode: 0644
       become: true
+      when: aptcache != ""
 
     - name: Update apt cache if needed.
       apt: update_cache=true cache_valid_time=3600
@@ -66,6 +67,7 @@
         path: "{{ ansible_user_dir }}/.config/pip"
         state: directory
         mode: '0755'
+      when: pypicache != ""
 
     - name: Add pip config
       template:
@@ -74,6 +76,7 @@
         owner: "{{ ansible_user_id }}"
         group: "{{ ansible_user_id }}"
         mode: 0644
+      when: pypicache != ""
 
     - name: Ensure directory for the test VM exists.
       file:

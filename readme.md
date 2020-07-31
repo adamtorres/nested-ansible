@@ -19,7 +19,7 @@ Make it so running `python` will choose python3 instead of python2.
     sudo update-alternatives --install /usr/bin/python python /usr/bin/python2.7 1
     sudo update-alternatives --install /usr/bin/python python /usr/bin/python3.7 2
 
-Point pip to a local pypi cache so constant rebuilds will not eat up monthly data allotment.  See https://pypi.org/project/devpi-server/.
+Point pip to a local pypi cache so constant rebuilds will not eat up monthly data allotment.  See https://pypi.org/project/devpi-server/.  Skip this if you are not using a pypi cache.
 
     python -m pip config set "global.index-url" http://local-pypi-cache-server.local/root/pypi/+simple/
     python -m pip config set "install.trusted-host" local-pypi-cache-server.local
@@ -63,6 +63,13 @@ The included inventory file points to the VM created by the Vagrantfile and tell
 
 The `ansible.cfg` file holds some settings for ansible's behavior.  The `interpreter_python` setting silences the warnings about automatically determining which python interpreter to use.  The `auto_silent` setting tells ansible to just be quiet about it.  While not secure, turning `host_key_checking` off just makes dealing with often recreated VMs easier.  This suppresses the ssh question of `ECDSA key fingerprint is...` when first connecting.  Another way around it would be to manually connect to each VM and answer the question outside of ansible.  The `profile_tasks` callback just adds a nice report for each task and at the end to show how long everything took.  The default sorting is descending but is overridden here to be in executed order.
 
+## Configure the apt and pypi cache servers
+
+The included vars.yml has variables for the apt cache and pypi cache servers.  These are mainly to save on internet usage to avoid data caps.  The two caching servers I'm currently using are [apt-cacher-ng](https://hub.docker.com/r/sameersbn/apt-cacher-ng) as a docker image and [devpi-server](https://pypi.org/project/devpi-server/).  If you are not using one or both kinds of servers, make the variables empty.  The tasks in the playbook will skip the steps if the variables are empty strings.
+
+    aptcache: ""
+    pypicache: ""
+
 ## Simple test to make sure ansible can see the VM.
 
 This runs an adhoc command on the VM.  The `-a` arg is for adding arguments to the selected `-m` module.  When no module is specified, the `command` module is used.  The following could have `-m command` added and there would be no difference in behavior.
@@ -88,3 +95,52 @@ Just for fun, run the same command against the localhost.  Note the comma after 
                   total        used        free      shared  buff/cache   available
     Mem:           31Gi       1.4Gi        29Gi       9.0Mi       667Mi        29Gi
     Swap:          31Gi          0B        31Gi
+
+
+## Run the main playbook
+
+With the VM running and the python venv set up, we are now ready to run the ansible playbook.
+
+    ansible-playbook -i inventory.yml main.yml
+
+The task `Ensure apt packages are installed` will take some time.  With the caching being used on my local network, it still takes 5 minutes.  On average, this takes about 5.5 minutes to run the first time.  Subsequent runs should take less than 10 seconds as nothing needs changed.
+
+First run:
+
+    PLAY RECAP ********************************************************************
+    vm1                        : ok=12   changed=9    unreachable=0    failed=0    skipped=0    rescued=0    ignored=0
+
+    Friday 31 July 2020  14:26:28 -0600 (0:00:01.287)       0:05:52.293 ***********
+    ===============================================================================
+    Gathering Facts --------------------------------------------------------- 0.84s
+    Ensure apt proxy is correct --------------------------------------------- 0.40s
+    Update apt cache if needed. -------------------------------------------- 11.13s
+    Ensure apt packages are installed ------------------------------------- 312.53s
+    Check for python alternative link --------------------------------------- 0.13s
+    Update python version priority ------------------------------------------ 0.48s
+    Ensure directory for pip config exists. --------------------------------- 0.28s
+    Add pip config ---------------------------------------------------------- 0.30s
+    Ensure directory for the test VM exists. -------------------------------- 0.16s
+    Ensure python venv has required packages ------------------------------- 24.31s
+    Ensure git settings are up-to-date -------------------------------------- 0.40s
+    Ensure Disaster project is cloned/updated. ------------------------------ 1.29s
+
+A subsequent run:
+
+    PLAY RECAP ********************************************************************
+    vm1                        : ok=11   changed=0    unreachable=0    failed=0    skipped=1    rescued=0    ignored=0
+
+    Friday 31 July 2020  14:27:20 -0600 (0:00:00.715)       0:00:07.507 ***********
+    ===============================================================================
+    Gathering Facts --------------------------------------------------------- 0.65s
+    Ensure apt proxy is correct --------------------------------------------- 0.47s
+    Update apt cache if needed. --------------------------------------------- 2.99s
+    Ensure apt packages are installed --------------------------------------- 0.54s
+    Check for python alternative link --------------------------------------- 0.17s
+    Update python version priority ------------------------------------------ 0.03s
+    Ensure directory for pip config exists. --------------------------------- 0.16s
+    Add pip config ---------------------------------------------------------- 0.29s
+    Ensure directory for the test VM exists. -------------------------------- 0.16s
+    Ensure python venv has required packages -------------------------------- 0.87s
+    Ensure git settings are up-to-date -------------------------------------- 0.39s
+    Ensure Disaster project is cloned/updated. ------------------------------ 0.72s
