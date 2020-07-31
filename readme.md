@@ -70,6 +70,25 @@ The included vars.yml has variables for the apt cache and pypi cache servers.  T
     aptcache: ""
     pypicache: ""
 
+If not using an apt cache, an early task will be skipped.  
+
+    TASK [Ensure apt proxy is correct] ********************************************
+    Friday 31 July 2020  14:37:01 -0600 (0:00:00.946)       0:00:00.999 ***********
+    skipping: [vm1]
+
+If not using a pypi cache, two later steps will be skipped.
+
+
+    TASK [Ensure directory for pip config exists.] ********************************
+    Friday 31 July 2020  14:42:52 -0600 (0:00:00.422)       0:05:51.788 ***********
+    skipping: [vm1]
+
+    TASK [Add pip config] *********************************************************
+    Friday 31 July 2020  14:42:52 -0600 (0:00:00.019)       0:05:51.807 ***********
+    skipping: [vm1]
+
+If you set up caches at a later date and add the ip/hostnames to the vars.yml, rerunning the playbook will update the appropriate files.
+
 ## Simple test to make sure ansible can see the VM.
 
 This runs an adhoc command on the VM.  The `-a` arg is for adding arguments to the selected `-m` module.  When no module is specified, the `command` module is used.  The following could have `-m command` added and there would be no difference in behavior.
@@ -144,3 +163,25 @@ A subsequent run:
     Ensure python venv has required packages -------------------------------- 0.87s
     Ensure git settings are up-to-date -------------------------------------- 0.39s
     Ensure Disaster project is cloned/updated. ------------------------------ 0.72s
+
+
+First run when not using apt or pypi caches.  Only saved less than half a minute.  Guessing most of the time is spent dealing with the downloaded files.  One of the advantages of having fast internet access is less time spent downloading.  Even with the fast speed, I'd still suggest using caches just for the data cap reason.
+
+    PLAY RECAP ********************************************************************
+    vm1                        : ok=9    changed=6    unreachable=0    failed=0    skipped=3    rescued=0    ignored=0
+
+    Friday 31 July 2020  14:43:17 -0600 (0:00:01.210)       0:06:16.510 ***********
+    ===============================================================================
+    Gathering Facts --------------------------------------------------------- 0.95s
+    Ensure apt proxy is correct --------------------------------------------- 0.02s
+    Update apt cache if needed. -------------------------------------------- 11.34s
+    Ensure apt packages are installed ------------------------------------- 338.79s
+    Check for python alternative link --------------------------------------- 0.21s
+    Update python version priority ------------------------------------------ 0.42s
+    Ensure directory for pip config exists. --------------------------------- 0.02s
+    Add pip config ---------------------------------------------------------- 0.02s
+    Ensure directory for the test VM exists. -------------------------------- 0.24s
+    Ensure python venv has required packages ------------------------------- 22.83s
+    Ensure git settings are up-to-date -------------------------------------- 0.40s
+    Ensure Disaster project is cloned/updated. ------------------------------ 1.21s
+
