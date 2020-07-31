@@ -69,22 +69,23 @@ Now, start the VM.  If you don't already have the debian/buster64 box downloaded
 Using python3's venv (what I use on Debian)
 
     python -m venv --copies venv
+    . venv/bin/activate
 
 Or using pyenv (what I use on OSX)
 
     pyenv virtualenv --copies 3.8.2 ansible-test-venv
     pyenv local ansible-test-venv
 
-Regardless, upgrade pip and install ansible and 
+Regardless, The first upgrades pip and installs wheel.  An upgraded pip is usually a good thing and wheel prevents the "Failed building wheel for ..." error messages.  The second installs ansible and libvirt.  The libvirt library is so python can query the VMs.
 
-    pip install pip --upgrade
-    pip install ansible
+    pip install -r requirements-first.txt --upgrade
+    pip install -r requirements-second.txt --upgrade
 
 ## Create a basic inventory.
 
     cat << EOF > inventory.yml
     [machines]
-    vm1 ansible_host=192.168.1.30 ansible_user=vagrant ansible_ssh_private_key_file=/home/$USER/.vagrant.d/insecure_private_key
+    vm1 ansible_host=192.168.33.10 ansible_user=vagrant ansible_ssh_private_key_file=/home/$USER/.vagrant.d/insecure_private_key
     EOF
 
 ## Configure some ansible settings
