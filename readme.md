@@ -122,7 +122,7 @@ With the VM running and the python venv set up, we are now ready to run the ansi
 
     ansible-playbook -i inventory.yml main.yml
 
-The task `Ensure apt packages are installed` will take some time.  With the caching being used on my local network, it still takes 5 minutes.  On average, this takes about 5.5 minutes to run the first time.  Subsequent runs should take less than 10 seconds as nothing needs changed.
+The task `Ensure apt packages are installed` will take some time.  With the caching being used on my local network, it still takes 5 minutes.  On average, this takes about 5.5 minutes to run the first time.  Subsequent runs should take less than 10 seconds as nothing needs changed.  Obviously, times will vary based on internet connection speed and hardware.  These times are just used for comparison to each other rather than your own experience.
 
 First run:
 
